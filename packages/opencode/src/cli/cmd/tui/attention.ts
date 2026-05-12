@@ -88,27 +88,6 @@ function soundVolume(input: TuiAttentionNotifyInput, config: Pick<TuiConfig.Reso
   return clampVolume(input.sound.volume ?? config.attention.volume)
 }
 
-function soundName(input: TuiAttentionNotifyInput): TuiAttentionSoundName {
-  if (typeof input.sound === "object")
-    return input.sound.name && isAttentionSoundName(input.sound.name) ? input.sound.name : "default"
-  return "default"
-}
-
-function notificationEnabled(input: TuiAttentionNotifyInput) {
-  if (input.notification === false) return false
-  return true
-}
-
-function notificationWhen(input: TuiAttentionNotifyInput) {
-  if (typeof input.notification === "object" && input.notification.when) return input.notification.when
-  return "blurred"
-}
-
-function soundWhen(input: TuiAttentionNotifyInput) {
-  if (typeof input.sound === "object" && input.sound.when) return input.sound.when
-  return "always"
-}
-
 function normalizePack(pack: TuiAttentionSoundPack): RegisteredSoundPack | undefined {
   const id = pack.id.trim()
   if (!id) return
@@ -196,8 +175,9 @@ export function createTuiAttention(input: {
         const message = normalizeText(request.message, "", MESSAGE_LIMIT)
         if (!message) return skipped("empty_message")
 
-        const notificationSkip = focusSkip(notificationWhen(request), focus)
-        const notificationRequested = input.config.attention.notifications && notificationEnabled(request)
+        const requestedNotification = typeof request.notification === "object" ? request.notification : undefined
+        const notificationSkip = focusSkip(requestedNotification?.when ?? "blurred", focus)
+        const notificationRequested = input.config.attention.notifications && request.notification !== false
         const shouldNotify = notificationRequested && !notificationSkip
         const notification = shouldNotify
           ? (() => {
@@ -213,8 +193,10 @@ export function createTuiAttention(input: {
             })()
           : false
         const volume = soundVolume(request, input.config)
-        const soundSkip = volume === undefined ? undefined : focusSkip(soundWhen(request), focus)
-        const sound = volume === undefined || soundSkip ? false : await playSound(soundName(request), volume)
+        const requestedSound = typeof request.sound === "object" ? request.sound : undefined
+        const soundSkip = volume === undefined ? undefined : focusSkip(requestedSound?.when ?? "always", focus)
+        const soundName = requestedSound?.name && isAttentionSoundName(requestedSound.name) ? requestedSound.name : "default"
+        const sound = volume === undefined || soundSkip ? false : await playSound(soundName, volume)
 
         if (!notification && !sound) {
           if (notificationRequested && notificationSkip) return skipped(notificationSkip)

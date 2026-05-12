@@ -15,15 +15,12 @@ function notify(api: TuiPluginApi, sessionID: string | undefined, message: strin
   })
 }
 
-function errorDataMessage(error: SessionError) {
-  const data = error?.data
-  if (!data || typeof data !== "object" || !("message" in data)) return ""
-  return typeof data.message === "string" ? data.message : ""
-}
-
 function sessionErrorMessage(error: SessionError) {
   if (error?.name === "MessageAbortedError") return "Session aborted"
-  if (errorDataMessage(error) === "SSE read timed out") return "Model stopped responding"
+  const data = error?.data
+  if (data && typeof data === "object" && "message" in data && data.message === "SSE read timed out") {
+    return "Model stopped responding"
+  }
   return "Session error"
 }
 
