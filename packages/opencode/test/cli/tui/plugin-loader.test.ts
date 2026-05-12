@@ -854,11 +854,13 @@ test("plugin keymap proxy preserves real keymap receiver", async () => {
   }
 })
 
-test("auto-disposes plugin attention sound packs and resolves relative paths", async () => {
+test("auto-disposes plugin attention sound packs and resolves sound paths", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       const file = path.join(dir, "attention-soundpack-plugin.ts")
       const spec = pathToFileURL(file).href
+      const absolute = path.join(dir, "sounds", "default.mp3")
+      const url = pathToFileURL(path.join(dir, "sounds", "error.mp3")).href
 
       await Bun.write(
         file,
@@ -868,10 +870,11 @@ test("auto-disposes plugin attention sound packs and resolves relative paths", a
     api.attention.soundboard.registerPack({
       id: "demo.pack",
       sounds: {
+        default: ${JSON.stringify(absolute)},
         question: "sounds/question.mp3",
         done: "  sounds/done.mp3  ",
+        error: ${JSON.stringify(url)},
         nope: "sounds/nope.mp3",
-        error: undefined,
         permission: "",
       },
     })
@@ -918,8 +921,10 @@ test("auto-disposes plugin attention sound packs and resolves relative paths", a
       {
         id: "demo.pack",
         sounds: {
+          default: path.join(tmp.path, "sounds", "default.mp3"),
           question: path.join(tmp.path, "sounds", "question.mp3"),
           done: path.join(tmp.path, "sounds", "done.mp3"),
+          error: path.join(tmp.path, "sounds", "error.mp3"),
         },
       },
     ])

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test"
 import path from "path"
 import fs from "fs/promises"
+import { pathToFileURL } from "url"
 import { provideTestInstance, tmpdir } from "../fixture/fixture"
 import { InstanceRuntime } from "@/project/instance-runtime"
 import { TuiConfig } from "../../src/cli/cmd/tui/config/tui"
@@ -165,7 +166,11 @@ test("resolves attention config defaults and overrides", async () => {
               sound: false,
               volume: 0.7,
               sound_pack: "acme.soft",
-              sounds: { error: "./error.mp3" },
+              sounds: {
+                default: path.join(dir, "default.mp3"),
+                question: pathToFileURL(path.join(dir, "question.mp3")).href,
+                error: "./error.mp3",
+              },
             },
           },
           null,
@@ -181,7 +186,11 @@ test("resolves attention config defaults and overrides", async () => {
     sound: false,
     volume: 0.7,
     sound_pack: "acme.soft",
-    sounds: { error: path.join(overridden.path, "error.mp3") },
+    sounds: {
+      default: path.join(overridden.path, "default.mp3"),
+      question: path.join(overridden.path, "question.mp3"),
+      error: path.join(overridden.path, "error.mp3"),
+    },
   })
 })
 

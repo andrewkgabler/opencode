@@ -1,6 +1,5 @@
 export * as TuiConfig from "./tui"
 
-import { fileURLToPath } from "url"
 import path from "path"
 import { createBindingLookup } from "@opentui/keymap/extras"
 import { mergeDeep, unique } from "remeda"
@@ -9,7 +8,7 @@ import { ConfigParse } from "@/config/parse"
 import { InvalidError } from "@/config/error"
 import * as ConfigPaths from "@/config/paths"
 import { migrateTuiConfig } from "./tui-migrate"
-import { KeymapLeaderTimeoutDefault, TuiAttentionSoundNames, TuiInfo } from "./tui-schema"
+import { KeymapLeaderTimeoutDefault, resolveAttentionSoundPaths, TuiAttentionSoundNames, TuiInfo } from "./tui-schema"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { isRecord } from "@/util/record"
 import { Global } from "@opencode-ai/core/global"
@@ -79,29 +78,6 @@ function normalize(raw: Record<string, unknown>) {
   }
 }
 
-function resolveSoundPath(value: string, configFilepath: string) {
-  const raw = value.startsWith("file://") ? fileURLToPath(value) : value
-  if (path.isAbsolute(raw)) return raw
-  return path.resolve(path.dirname(configFilepath), raw)
-}
-
-function resolveAttentionSounds(config: Info, configFilepath: string): Info {
-  if (!config.attention?.sounds) return config
-  return {
-    ...config,
-    attention: {
-      ...config.attention,
-      sounds: Object.fromEntries(
-        TuiAttentionSoundNames.flatMap((name) => {
-          const value = config.attention?.sounds?.[name]
-          if (!value) return []
-          return [[name, resolveSoundPath(value, configFilepath)]]
-        }),
-      ),
-    },
-  }
-}
-
 const loadState = Effect.fn("TuiConfig.loadState")(function* (ctx: { directory: string }) {
   const afs = yield* AppFileSystem.Service
 
@@ -134,7 +110,16 @@ const loadState = Effect.fn("TuiConfig.loadState")(function* (ctx: { directory: 
           })
         }
       }
-      const validated = resolveAttentionSounds(ConfigParse.schema(Info, normalized, configFilepath), configFilepath)
+      const parsed = ConfigParse.schema(Info, normalized, configFilepath)
+      const validated = parsed.attention?.sounds
+        ? {
+            ...parsed,
+            attention: {
+              ...parsed.attention,
+              sounds: resolveAttentionSoundPaths(path.dirname(configFilepath), parsed.attention.sounds),
+            },
+          }
+        : parsed
       return yield* resolvePlugins(validated, configFilepath)
     }).pipe(
       // catchCause (not tapErrorCause + orElseSucceed) because JSONC parsing and validation

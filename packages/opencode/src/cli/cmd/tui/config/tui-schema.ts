@@ -1,14 +1,38 @@
 import { ConfigPlugin } from "@/config/plugin"
 import { TuiKeybind } from "./keybind"
 import { Schema } from "effect"
+import { isRecord } from "@/util/record"
+import { Filesystem } from "@/util/filesystem"
+
+export const TuiAttentionSoundNames = ["default", "question", "permission", "error", "done"] as const
+export type TuiAttentionSoundName = (typeof TuiAttentionSoundNames)[number]
+export type TuiAttentionSoundPaths = Partial<Record<TuiAttentionSoundName, string>>
+
+export function isAttentionSoundName(value: string): value is TuiAttentionSoundName {
+  return TuiAttentionSoundNames.includes(value as TuiAttentionSoundName)
+}
+
+export function resolveAttentionSoundPaths(
+  root: string,
+  sounds: unknown,
+  options?: { trim?: boolean },
+): TuiAttentionSoundPaths {
+  if (!isRecord(sounds)) return {}
+  return Object.fromEntries(
+    Object.entries(sounds).flatMap(([name, file]) => {
+      if (!isAttentionSoundName(name)) return []
+      if (typeof file !== "string") return []
+      const value = options?.trim ? file.trim() : file
+      if (!value) return []
+      return [[name, Filesystem.resolveFilePath(root, value)]]
+    }),
+  )
+}
 
 export const KeymapLeaderTimeoutDefault = 2000
 const KeymapLeaderTimeout = Schema.Int.check(Schema.isGreaterThan(0)).annotate({
   description: "Leader key timeout in milliseconds",
 })
-
-export const TuiAttentionSoundNames = ["default", "question", "permission", "error", "done"] as const
-export type TuiAttentionSoundName = (typeof TuiAttentionSoundNames)[number]
 
 const TuiAttentionSounds = Schema.Struct({
   default: Schema.optional(Schema.String),

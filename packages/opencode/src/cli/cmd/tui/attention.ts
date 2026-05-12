@@ -12,6 +12,7 @@ import type {
 } from "@opencode-ai/plugin/tui"
 import stripAnsi from "strip-ansi"
 import type { TuiConfig } from "./config/tui"
+import { isAttentionSoundName } from "./config/tui-schema"
 import * as TuiAudio from "@tui/util/audio"
 import defaultSoundPath from "@opencode-ai/ui/audio/bip-bop-01.mp3" with { type: "file" }
 import questionSoundPath from "@opencode-ai/ui/audio/bip-bop-03.mp3" with { type: "file" }
@@ -44,13 +45,6 @@ const DEFAULT_PACK_ID = "opencode.default"
 const KV_SOUND_PACK = "attention_sound_pack"
 const TITLE_LIMIT = 80
 const MESSAGE_LIMIT = 240
-const SOUND_NAMES: readonly TuiAttentionSoundName[] = [
-  "default",
-  "question",
-  "permission",
-  "error",
-  "done",
-]
 const BUILTIN_PACK: RegisteredSoundPack = {
   id: DEFAULT_PACK_ID,
   name: "OpenCode Default",
@@ -97,7 +91,7 @@ function soundVolume(input: TuiAttentionNotifyInput, config: Pick<TuiConfig.Reso
 
 function soundName(input: TuiAttentionNotifyInput): TuiAttentionSoundName {
   if (typeof input.sound === "object")
-    return input.sound.name && isSoundName(input.sound.name) ? input.sound.name : "default"
+    return input.sound.name && isAttentionSoundName(input.sound.name) ? input.sound.name : "default"
   return "default"
 }
 
@@ -116,10 +110,6 @@ function soundWhen(input: TuiAttentionNotifyInput) {
   return "always"
 }
 
-function isSoundName(value: string): value is TuiAttentionSoundName {
-  return SOUND_NAMES.includes(value as TuiAttentionSoundName)
-}
-
 function normalizePack(pack: TuiAttentionSoundPack): RegisteredSoundPack | undefined {
   const id = pack.id.trim()
   if (!id) return
@@ -130,7 +120,7 @@ function normalizePack(pack: TuiAttentionSoundPack): RegisteredSoundPack | undef
     sounds: Object.fromEntries(
       Object.entries(pack.sounds).filter(
         (item): item is [TuiAttentionSoundName, string] =>
-          isSoundName(item[0]) && typeof item[1] === "string" && item[1].trim().length > 0,
+          isAttentionSoundName(item[0]) && typeof item[1] === "string" && item[1].trim().length > 0,
       ),
     ),
   }

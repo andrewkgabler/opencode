@@ -14,10 +14,10 @@ import {
 import path from "path"
 import { fileURLToPath } from "url"
 import { TuiConfig } from "@/cli/cmd/tui/config/tui"
-import { TuiAttentionSoundNames, type TuiAttentionSoundName } from "../config/tui-schema"
 import * as Log from "@opencode-ai/core/util/log"
 import { errorData, errorMessage } from "@/util/error"
 import { isRecord } from "@/util/record"
+import { resolveAttentionSoundPaths } from "../config/tui-schema"
 import {
   readPackageThemes,
   readPluginId,
@@ -53,7 +53,7 @@ type PluginLoad = {
   id: string
   module: TuiPluginModule
   origin: ConfigPlugin.Origin
-  theme_root: string
+  plugin_root: string
   theme_files: string[]
 }
 
@@ -159,23 +159,6 @@ function createScopedKeymap(keymap: TuiPluginApi["keymap"], scope: PluginScope):
   })
 }
 
-function isAttentionSoundName(value: string): value is TuiAttentionSoundName {
-  return TuiAttentionSoundNames.includes(value as TuiAttentionSoundName)
-}
-
-function resolvePluginSoundPackSounds(root: string, sounds: unknown) {
-  if (!isRecord(sounds)) return {}
-  return Object.fromEntries(
-    Object.entries(sounds).flatMap(([name, file]) => {
-      if (!isAttentionSoundName(name)) return []
-      if (typeof file !== "string") return []
-      const trimmed = file.trim()
-      if (!trimmed) return []
-      return [[name, resolvePluginFile(root, trimmed)]]
-    }),
-  )
-}
-
 function createScopedAttention(
   attention: TuiPluginApi["attention"],
   scope: PluginScope,
@@ -190,7 +173,7 @@ function createScopedAttention(
         return scope.track(
           attention.soundboard.registerPack({
             ...pack,
-            sounds: resolvePluginSoundPackSounds(root, pack.sounds),
+            sounds: resolveAttentionSoundPaths(root, pack.sounds, { trim: true }),
           }),
         )
       },
@@ -248,12 +231,6 @@ function resolveRoot(root: string) {
   return path.resolve(process.cwd(), root)
 }
 
-function resolvePluginFile(root: string, file: string) {
-  const raw = file.startsWith("file://") ? fileURLToPath(file) : file
-  if (path.isAbsolute(raw)) return raw
-  return path.resolve(root, raw)
-}
-
 function createThemeInstaller(
   meta: ConfigPlugin.Origin,
   root: string,
@@ -261,8 +238,7 @@ function createThemeInstaller(
   plugin: PluginEntry,
 ): TuiTheme["install"] {
   return async (file) => {
-    const raw = file.startsWith("file://") ? fileURLToPath(file) : file
-    const src = path.isAbsolute(raw) ? raw : path.resolve(root, raw)
+    const src = Filesystem.resolveFilePath(root, file)
     const name = path.basename(src, path.extname(src))
     const source_dir = path.dirname(meta.source)
     const local_dir =
@@ -387,7 +363,7 @@ function loadInternalPlugin(item: InternalTuiPlugin): PluginLoad {
       scope: "global",
       source: target,
     },
-    theme_root: process.cwd(),
+    plugin_root: process.cwd(),
     theme_files: [],
   }
 }
@@ -409,7 +385,7 @@ async function readThemeFiles(spec: string, pkg?: PluginPackage) {
 async function syncPluginThemes(plugin: PluginEntry) {
   if (!plugin.load.theme_files.length) return
   if (plugin.meta.state === "same") return
-  const install = createThemeInstaller(plugin.load.origin, plugin.load.theme_root, plugin.load.spec, plugin)
+  const install = createThemeInstaller(plugin.load.origin, plugin.load.plugin_root, plugin.load.spec, plugin)
   for (const file of plugin.load.theme_files) {
     await install(file).catch((error) => {
       warn("failed to sync tui plugin oc-themes", { path: plugin.load.spec, id: plugin.id, theme: file, error })
@@ -609,7 +585,7 @@ function pluginApi(runtime: RuntimeState, plugin: PluginEntry, scope: PluginScop
   }
 
   const theme: TuiPluginApi["theme"] = Object.assign(Object.create(api.theme), {
-    install: createThemeInstaller(load.origin, load.theme_root, load.spec, plugin),
+    install: createThemeInstaller(load.origin, load.plugin_root, load.spec, plugin),
   })
 
   const event: TuiPluginApi["event"] = {
@@ -633,7 +609,7 @@ function pluginApi(runtime: RuntimeState, plugin: PluginEntry, scope: PluginScop
 
   return {
     app: api.app,
-    attention: createScopedAttention(api.attention, scope, load.theme_root),
+    attention: createScopedAttention(api.attention, scope, load.plugin_root),
     // Keep deprecated `api.command` working for v1 plugins; remove in v2.
     command: createCommandShim(keymap, api.ui.dialog, api.tuiConfig.keybinds),
     keys: api.keys,
@@ -740,7 +716,7 @@ async function resolveExternalPlugins(list: ConfigPlugin.Origin[], wait: () => P
         id,
         module: mod,
         origin,
-        theme_root: loaded.pkg?.dir ?? resolveRoot(loaded.target),
+        plugin_root: loaded.pkg?.dir ?? resolveRoot(loaded.target),
         theme_files,
       }
     },
@@ -767,7 +743,7 @@ async function resolveExternalPlugins(list: ConfigPlugin.Origin[], wait: () => P
         id,
         module: EMPTY_TUI,
         origin,
-        theme_root: loaded.pkg?.dir ?? resolveRoot(loaded.target),
+        plugin_root: loaded.pkg?.dir ?? resolveRoot(loaded.target),
         theme_files,
       }
     },
