@@ -18,6 +18,7 @@ import questionSoundPath from "@opencode-ai/ui/audio/bip-bop-03.mp3" with { type
 import permissionSoundPath from "@opencode-ai/ui/audio/staplebops-06.mp3" with { type: "file" }
 import errorSoundPath from "@opencode-ai/ui/audio/nope-03.mp3" with { type: "file" }
 import doneSoundPath from "@opencode-ai/ui/audio/bip-bop-01.mp3" with { type: "file" }
+import subagentDoneSoundPath from "@opencode-ai/ui/audio/yup-01.mp3" with { type: "file" }
 import * as Log from "@opencode-ai/core/util/log"
 
 type FocusState = "unknown" | "focused" | "blurred"
@@ -54,6 +55,7 @@ const BUILTIN_PACK: RegisteredSoundPack = {
     permission: permissionSoundPath,
     error: errorSoundPath,
     done: doneSoundPath,
+    subagent_done: subagentDoneSoundPath,
   },
 }
 

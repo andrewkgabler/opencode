@@ -228,7 +228,8 @@ export type TuiToast = {
 
 export type TuiAttentionWhen = "always" | "focused" | "blurred"
 
-export type TuiAttentionSoundName = "default" | "question" | "permission" | "error" | "done"
+export const TuiAttentionSoundNames = ["default", "question", "permission", "error", "done", "subagent_done"] as const
+export type TuiAttentionSoundName = (typeof TuiAttentionSoundNames)[number]
 
 export type TuiAttentionSound =
   | boolean

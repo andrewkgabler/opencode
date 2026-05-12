@@ -7,10 +7,12 @@ const id = "internal:notifications"
 type SessionError = Extract<Event, { type: "session.error" }>["properties"]["error"]
 
 function notify(api: TuiPluginApi, sessionID: string | undefined, message: string, sound: TuiAttentionSoundName) {
+  const session = sessionID ? api.state.session.get(sessionID) : undefined
+  const isSubagent = session?.parentID !== undefined
   void api.attention.notify({
-    title: sessionID ? api.state.session.get(sessionID)?.title : undefined,
+    title: session?.title,
     message,
-    notification: { when: "blurred" },
+    notification: isSubagent ? false : { when: "blurred" },
     sound: { name: sound, when: "always" },
   })
 }
@@ -71,7 +73,8 @@ const tui: TuiPlugin = async (api) => {
       return
     }
 
-    notify(api, sessionID, "Session done", "done")
+    const session = api.state.session.get(sessionID)
+    notify(api, sessionID, "Session done", session?.parentID ? "subagent_done" : "done")
   })
 
   api.event.on("session.error", (event) => {

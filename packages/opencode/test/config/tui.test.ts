@@ -170,6 +170,7 @@ test("resolves attention config defaults and overrides", async () => {
                 default: path.join(dir, "default.mp3"),
                 question: pathToFileURL(path.join(dir, "question.mp3")).href,
                 error: "./error.mp3",
+                subagent_done: "./subagent-done.mp3",
               },
             },
           },
@@ -190,6 +191,7 @@ test("resolves attention config defaults and overrides", async () => {
       default: path.join(overridden.path, "default.mp3"),
       question: path.join(overridden.path, "question.mp3"),
       error: path.join(overridden.path, "error.mp3"),
+      subagent_done: path.join(overridden.path, "subagent-done.mp3"),
     },
   })
 })

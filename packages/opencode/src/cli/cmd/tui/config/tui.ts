@@ -8,7 +8,7 @@ import { ConfigParse } from "@/config/parse"
 import { InvalidError } from "@/config/error"
 import * as ConfigPaths from "@/config/paths"
 import { migrateTuiConfig } from "./tui-migrate"
-import { KeymapLeaderTimeoutDefault, resolveAttentionSoundPaths, TuiAttentionSoundNames, TuiInfo } from "./tui-schema"
+import { KeymapLeaderTimeoutDefault, resolveAttentionSoundPaths, TuiInfo } from "./tui-schema"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { isRecord } from "@/util/record"
 import { Global } from "@opencode-ai/core/global"
@@ -23,6 +23,7 @@ import * as Log from "@opencode-ai/core/util/log"
 import { ConfigVariable } from "@/config/variable"
 import { Npm } from "@opencode-ai/core/npm"
 import type { DeepMutable } from "@opencode-ai/core/schema"
+import type { TuiAttentionSoundName } from "@opencode-ai/plugin/tui"
 
 const log = Log.create({ service: "tui.config" })
 
@@ -41,7 +42,7 @@ export type Resolved = Omit<Info, "attention" | "keybinds" | "leader_timeout"> &
     sound: boolean
     volume: number
     sound_pack: string
-    sounds: Partial<Record<(typeof TuiAttentionSoundNames)[number], string>>
+    sounds: Partial<Record<TuiAttentionSoundName, string>>
   }
   keybinds: TuiKeybind.BindingLookupView
   leader_timeout: number

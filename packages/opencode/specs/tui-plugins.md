@@ -59,7 +59,7 @@ Example:
 - `attention.notifications` and `attention.sound` independently control terminal-mediated desktop notifications and built-in sounds.
 - `attention.volume` sets the default built-in sound volume from `0` to `1`.
 - `attention.sound_pack` selects the initial semantic sound pack. Persisted runtime selection in KV can override it.
-- `attention.sounds` overrides individual semantic sound slots such as `error` or `done`.
+- `attention.sounds` overrides individual semantic sound slots such as `error`, `done`, or `subagent_done`.
 - `leader_timeout` is a top-level TUI setting.
 - `keybinds` is a flat object keyed by command id; values are key binding values (`false`, `"none"`, a key string/object, a binding object, or an array of key strings/objects/binding objects).
 - `keybinds.leader` sets the key used by `<leader>` shortcuts.
@@ -269,7 +269,7 @@ Top-level API groups exposed to `tui(api, options, meta)`:
 - `when: "always"` requests delivery regardless of terminal focus state.
 - `when: "focused"` only requests delivery after the terminal is known focused; `when: "blurred"` only requests delivery after the terminal is known blurred.
 - Example: `notification: { when: "blurred" }, sound: { name: "question", when: "always" }` plays sound while focused but only triggers system notifications when blurred.
-- Semantic sound names are `"default"`, `"question"`, `"permission"`, `"error"`, and `"done"`.
+- Semantic sound names are `"default"`, `"question"`, `"permission"`, `"error"`, `"done"`, and `"subagent_done"`.
 - `sound: true` plays the `"default"` sound; `sound: { name: "question" }` plays a named semantic sound.
 - `sound: { volume }` overrides volume for that call; `sound: false` disables sound for that call; `notification: false` disables system notification for that call.
 - `api.attention.soundboard.registerPack({ id, name?, sounds })` registers a sound pack and returns a disposer. Relative paths resolve from the plugin root and are cleaned up on plugin deactivation.

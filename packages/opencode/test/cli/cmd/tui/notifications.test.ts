@@ -7,17 +7,19 @@ import { createTuiPluginApi } from "../../../fixture/tui-plugin"
 async function setup() {
   const notifications: TuiAttentionNotifyInput[] = []
   const handlers = new Map<Event["type"], ((event: Event) => void)[]>()
-  const session = (id: string, title: string): Session => ({
+  const session = (id: string, title: string, parentID?: string): Session => ({
     id,
     title,
     slug: id,
     projectID: "project",
     directory: "/workspace",
+    ...(parentID && { parentID }),
     version: "0.0.0-test",
     time: { created: 0, updated: 0 },
   })
   const sessions: Record<string, Session> = {
     session: session("session", "Demo session"),
+    subagent: session("subagent", "Subagent session", "session"),
     abort: session("abort", "Abort session"),
     timeout: session("timeout", "Timeout session"),
   }
@@ -62,18 +64,18 @@ async function setup() {
   }
 }
 
-function question(id: string): QuestionRequest {
+function question(id: string, sessionID = "session"): QuestionRequest {
   return {
     id,
-    sessionID: "session",
+    sessionID,
     questions: [],
   }
 }
 
-function permission(id: string): PermissionRequest {
+function permission(id: string, sessionID = "session"): PermissionRequest {
   return {
     id,
-    sessionID: "session",
+    sessionID,
     permission: "edit",
     patterns: [],
     metadata: {},
@@ -159,6 +161,37 @@ describe("internal notifications TUI plugin", () => {
         message: "Session done",
         notification: { when: "blurred" },
         sound: { name: "done", when: "always" },
+      },
+    ])
+  })
+
+  test("uses sound-only notifications and subagent_done sound for subagent sessions", async () => {
+    const harness = await setup()
+
+    harness.emit({ id: "event-1", type: "question.asked", properties: question("question-1", "subagent") })
+    harness.emit({
+      id: "event-2",
+      type: "session.status",
+      properties: { sessionID: "subagent", status: { type: "busy" } },
+    })
+    harness.emit({
+      id: "event-3",
+      type: "session.status",
+      properties: { sessionID: "subagent", status: { type: "idle" } },
+    })
+
+    expect(harness.notifications).toEqual([
+      {
+        title: "Subagent session",
+        message: "Question needs input",
+        notification: false,
+        sound: { name: "question", when: "always" },
+      },
+      {
+        title: "Subagent session",
+        message: "Session done",
+        notification: false,
+        sound: { name: "subagent_done", when: "always" },
       },
     ])
   })

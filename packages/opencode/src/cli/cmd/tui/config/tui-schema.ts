@@ -3,9 +3,8 @@ import { TuiKeybind } from "./keybind"
 import { Schema } from "effect"
 import { isRecord } from "@/util/record"
 import { Filesystem } from "@/util/filesystem"
+import { TuiAttentionSoundNames, type TuiAttentionSoundName } from "@opencode-ai/plugin/tui"
 
-export const TuiAttentionSoundNames = ["default", "question", "permission", "error", "done"] as const
-export type TuiAttentionSoundName = (typeof TuiAttentionSoundNames)[number]
 export type TuiAttentionSoundPaths = Partial<Record<TuiAttentionSoundName, string>>
 
 export function isAttentionSoundName(value: string): value is TuiAttentionSoundName {
@@ -40,6 +39,7 @@ const TuiAttentionSounds = Schema.Struct({
   permission: Schema.optional(Schema.String),
   error: Schema.optional(Schema.String),
   done: Schema.optional(Schema.String),
+  subagent_done: Schema.optional(Schema.String),
 })
 
 export const ScrollSpeed = Schema.Number.check(Schema.isGreaterThanOrEqualTo(0.001))
