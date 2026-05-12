@@ -1,11 +1,4 @@
-import {
-  BoxRenderable,
-  MouseButton,
-  MouseEvent,
-  RGBA,
-  TextAttributes,
-  type AudioVoice,
-} from "@opentui/core"
+import { BoxRenderable, MouseButton, MouseEvent, RGBA, TextAttributes, type AudioVoice } from "@opentui/core"
 import { useRenderer } from "@opentui/solid"
 import { For, createMemo, createSignal, onCleanup, onMount, type JSX } from "solid-js"
 import { useTheme, tint } from "@tui/context/theme"
@@ -119,15 +112,12 @@ function startLogoSound() {
     .catch(() => undefined)
 }
 
-function clearLogoSoundTail() {
-  if (!logoAudioTail) return
-  clearTimeout(logoAudioTail)
-  logoAudioTail = undefined
-}
-
 function stopLogoSound(delay = 0) {
   logoAudioSeq++
-  clearLogoSoundTail()
+  if (logoAudioTail) {
+    clearTimeout(logoAudioTail)
+    logoAudioTail = undefined
+  }
   if (logoAudioVoice === undefined) return
   const voice = logoAudioVoice
   if (delay <= 0) {
@@ -154,10 +144,6 @@ function pulseLogoSound(scale = 1) {
       TuiAudio.play(sound, { volume: 0.26 + 0.14 * scale })
     })
     .catch(() => undefined)
-}
-
-function disposeLogoSound() {
-  stopLogoSound()
 }
 
 type Ring = {
@@ -677,7 +663,7 @@ export function Logo(props: { shape?: LogoShape; ink?: RGBA; idle?: boolean } = 
   onCleanup(() => {
     stop()
     hum = false
-    disposeLogoSound()
+    stopLogoSound()
   })
 
   onMount(() => {

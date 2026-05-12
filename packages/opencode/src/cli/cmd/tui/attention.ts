@@ -1,4 +1,3 @@
-import type { AudioSound } from "@opentui/core"
 import type {
   TuiAttention,
   TuiAttentionNotifyInput,
@@ -34,7 +33,7 @@ type RegisteredSoundPack = TuiAttentionSoundPack & {
   builtin: boolean
 }
 
-export type TuiAttentionHost = TuiAttention & {
+type TuiAttentionHost = TuiAttention & {
   dispose(): void
 }
 
@@ -143,7 +142,6 @@ export function createTuiAttention(input: {
   let disposed = false
   let activePackID: string | undefined
   const packs = new Map<string, RegisteredSoundPack>([[BUILTIN_PACK.id, BUILTIN_PACK]])
-  const sounds = new Map<string, Promise<AudioSound | null>>()
   const audio = input.audio ?? TuiAudio
 
   const onFocus = () => {
@@ -171,21 +169,13 @@ export function createTuiAttention(input: {
     )
   }
 
-  async function loadSound(file: string) {
-    const cached = sounds.get(file)
-    if (cached) return cached
-    const task = audio.loadSoundFile(file).catch((error) => {
-      log.debug("failed to load attention sound", { file, error })
-      return null
-    })
-    sounds.set(file, task)
-    return task
-  }
-
   async function playSound(name: TuiAttentionSoundName, volume: number) {
     try {
       for (const file of soundCandidates(name)) {
-        const current = await loadSound(file)
+        const current = await audio.loadSoundFile(file).catch((error) => {
+          log.debug("failed to load attention sound", { file, error })
+          return null
+        })
         if (disposed) return false
         if (current == null) continue
         if (audio.play(current, { volume }) != null) return true
@@ -278,10 +268,10 @@ export function createTuiAttention(input: {
       },
     },
     dispose() {
+      if (disposed) return
       disposed = true
       input.renderer.off("focus", onFocus)
       input.renderer.off("blur", onBlur)
-      sounds.clear()
     },
   }
 }

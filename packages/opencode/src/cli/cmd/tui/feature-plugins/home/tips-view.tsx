@@ -1,4 +1,4 @@
-import { stringifyKeyStroke, type TuiPluginApi } from "@opencode-ai/plugin/tui"
+import type { TuiPluginApi } from "@opencode-ai/plugin/tui"
 import { createMemo, For, type Accessor } from "solid-js"
 import { DEFAULT_THEMES, useTheme } from "@tui/context/theme"
 import { Flag } from "@opencode-ai/core/flag/flag"
@@ -88,22 +88,18 @@ function press(shortcut: string, text: string) {
   return `Press ${shortcutText(shortcut)} ${text}`
 }
 
-function formatKeyLabel(key: string) {
-  return key.replace(/\bpageup\b/g, "pgup").replace(/\bpagedown\b/g, "pgdn").replace(/\bdelete\b/g, "del")
-}
-
-function formatConfigKey(api: TuiPluginApi, key: ReturnType<TuiPluginApi["tuiConfig"]["keybinds"]["get"]>[number]["key"]) {
-  const leaderKey = api.tuiConfig.keybinds.get("leader")[0]?.key
-  const leader = leaderKey ? (typeof leaderKey === "string" ? leaderKey : stringifyKeyStroke(leaderKey)) : "ctrl+x"
-  return formatKeyLabel((typeof key === "string" ? key : stringifyKeyStroke(key)).replaceAll("<leader>", leader))
-}
-
 function configShortcut(api: TuiPluginApi, command: string): TipShortcut {
-  return () => api.tuiConfig.keybinds.get(command).map((binding) => formatConfigKey(api, binding.key)).join(", ")
+  return () =>
+    api.tuiConfig.keybinds
+      .get(command)
+      .map((binding) => api.keys.formatSequence(Array.from(api.keymap.parseKeySequence(binding.key))))
+      .filter(Boolean)
+      .join(", ")
 }
 
 export function Tips(props: { api: TuiPluginApi; connected?: boolean }) {
   const theme = useTheme().theme
+  const tipOffset = Math.random()
   const shortcuts: Shortcuts = {
     agentCycle: useCommandShortcut("agent.cycle"),
     childFirst: configShortcut(props.api, "session.child.first"),
@@ -148,7 +144,7 @@ export function Tips(props: { api: TuiPluginApi; connected?: boolean }) {
       const value = typeof item === "string" ? item : item(shortcuts)
       return value ? [value] : []
     })
-    return tips[Math.floor(Math.random() * tips.length)] ?? NO_MODELS_TIP
+    return tips[Math.floor(tipOffset * tips.length)] ?? NO_MODELS_TIP
   })
   const parts = createMemo(() => parse(tip()))
 
@@ -178,11 +174,9 @@ const TIPS: Tip[] = [
   (shortcuts) => `Use ${commandText("/editor", shortcuts.editorOpen())} to compose messages in your external editor`,
   "Run {highlight}/init{/highlight} to auto-generate project rules based on your codebase",
   (shortcuts) => `Use ${commandText("/models", shortcuts.modelList())} to see and switch between available AI models`,
-  (shortcuts) =>
-    `Use ${commandText("/themes", shortcuts.themeList())} to switch between ${themeCount} built-in themes`,
+  (shortcuts) => `Use ${commandText("/themes", shortcuts.themeList())} to switch between ${themeCount} built-in themes`,
   (shortcuts) => `Use ${commandText("/new", shortcuts.sessionNew())} to start a fresh conversation session`,
-  (shortcuts) =>
-    `Use ${commandText("/sessions", shortcuts.sessionList())} to list and continue previous conversations`,
+  (shortcuts) => `Use ${commandText("/sessions", shortcuts.sessionList())} to list and continue previous conversations`,
   ...(Flag.OPENCODE_EXPERIMENTAL_SESSION_SWITCHING
     ? ([
         (shortcuts) =>

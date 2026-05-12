@@ -338,7 +338,7 @@ describe("createTuiAttention", () => {
     expect(audio.engine.volumes).toEqual([1])
   })
 
-  test("handles unavailable playback and cached audio correctly", async () => {
+  test("handles unavailable playback and delegates sound loading", async () => {
     const unavailableRenderer = new FakeRenderer()
     const unavailableAudio = new FakeAudio()
     unavailableAudio.engine.playResult = null
@@ -353,15 +353,15 @@ describe("createTuiAttention", () => {
     expect(unavailableAudio.engine.loadCalls).toBe(1)
     expect(unavailableAudio.engine.playCalls).toBe(1)
 
-    const cachedRenderer = new FakeRenderer()
-    const cachedAudio = new FakeAudio()
-    const cached = createTuiAttention({ renderer: cachedRenderer, config: config(), audio: cachedAudio })
-    cachedRenderer.emit("blur")
+    const repeatedRenderer = new FakeRenderer()
+    const repeatedAudio = new FakeAudio()
+    const repeated = createTuiAttention({ renderer: repeatedRenderer, config: config(), audio: repeatedAudio })
+    repeatedRenderer.emit("blur")
 
-    await cached.notify({ message: "one", sound: true })
-    await cached.notify({ message: "two", sound: true })
-    expect(cachedAudio.engine.loadCalls).toBe(1)
-    expect(cachedAudio.engine.playCalls).toBe(2)
+    await repeated.notify({ message: "one", sound: true })
+    await repeated.notify({ message: "two", sound: true })
+    expect(repeatedAudio.engine.loadCalls).toBe(2)
+    expect(repeatedAudio.engine.playCalls).toBe(2)
   })
 
   test("plays named sounds from the active sound pack", async () => {

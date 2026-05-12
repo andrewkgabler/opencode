@@ -38,7 +38,6 @@ import { Flag } from "@opencode-ai/core/flag/flag"
 import { INTERNAL_TUI_PLUGINS, type InternalTuiPlugin } from "./internal"
 import { setupSlots, Slot as View } from "./slots"
 import type { HostPluginApi, HostSlots } from "./slots"
-import type { TuiAttentionHost } from "../attention"
 import { ConfigPlugin } from "@/config/plugin"
 import { createCommandShim } from "./command-shim"
 
@@ -108,7 +107,7 @@ const ScopedKeymapMethods = new Set<PropertyKey>([
 type RuntimeState = {
   directory: string
   api: Api
-  attention?: TuiAttentionHost
+  dispose?: () => void
   slots: HostSlots
   plugins: PluginEntry[]
   plugins_by_id: Map<string, PluginEntry>
@@ -1001,7 +1000,7 @@ let loaded: Promise<void> | undefined
 let runtime: RuntimeState | undefined
 export const Slot = View
 
-export async function init(input: { api: HostPluginApi; config: TuiConfig.Resolved; attention?: TuiAttentionHost }) {
+export async function init(input: { api: HostPluginApi; config: TuiConfig.Resolved; dispose?: () => void }) {
   const cwd = process.cwd()
   if (loaded) {
     if (dir !== cwd) {
@@ -1048,17 +1047,17 @@ export async function dispose() {
   for (const plugin of queue) {
     await deactivatePluginEntry(state, plugin, false)
   }
-  state.attention?.dispose()
+  state.dispose?.()
 }
 
-async function load(input: { api: Api; config: TuiConfig.Resolved; attention?: TuiAttentionHost }) {
+async function load(input: { api: Api; config: TuiConfig.Resolved; dispose?: () => void }) {
   const { api, config } = input
   const cwd = process.cwd()
   const slots = setupSlots(api)
   const next: RuntimeState = {
     directory: cwd,
     api,
-    attention: input.attention,
+    dispose: input.dispose,
     slots,
     plugins: [],
     plugins_by_id: new Map(),
