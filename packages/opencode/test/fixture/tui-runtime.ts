@@ -24,7 +24,7 @@ export function createTuiResolvedConfig(input: ResolvedInput = {}): TuiConfig.Re
   return {
     ...input,
     attention: {
-      enabled: true,
+      enabled: false,
       notifications: true,
       sound: true,
       volume: 0.4,

@@ -145,7 +145,7 @@ test("loads tui config with the same precedence order as server config paths", a
 test("resolves attention config defaults and overrides", async () => {
   await using defaults = await tmpdir()
   expect((await getTuiConfig(defaults.path)).attention).toEqual({
-    enabled: true,
+    enabled: false,
     notifications: true,
     sound: true,
     volume: 0.4,

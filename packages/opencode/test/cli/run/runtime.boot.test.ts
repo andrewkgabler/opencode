@@ -94,7 +94,7 @@ function config(input?: {
   })
   return {
     attention: {
-      enabled: true,
+      enabled: false,
       notifications: true,
       sound: true,
       volume: 0.4,
