@@ -14,6 +14,7 @@ import {
 import path from "path"
 import { fileURLToPath } from "url"
 import { TuiConfig } from "@/cli/cmd/tui/config/tui"
+import { TuiAttentionSoundNames, type TuiAttentionSoundName } from "../config/tui-schema"
 import * as Log from "@opencode-ai/core/util/log"
 import { errorData, errorMessage } from "@/util/error"
 import { isRecord } from "@/util/record"
@@ -158,6 +159,23 @@ function createScopedKeymap(keymap: TuiPluginApi["keymap"], scope: PluginScope):
   })
 }
 
+function isAttentionSoundName(value: string): value is TuiAttentionSoundName {
+  return TuiAttentionSoundNames.includes(value as TuiAttentionSoundName)
+}
+
+function resolvePluginSoundPackSounds(root: string, sounds: unknown) {
+  if (!isRecord(sounds)) return {}
+  return Object.fromEntries(
+    Object.entries(sounds).flatMap(([name, file]) => {
+      if (!isAttentionSoundName(name)) return []
+      if (typeof file !== "string") return []
+      const trimmed = file.trim()
+      if (!trimmed) return []
+      return [[name, resolvePluginFile(root, trimmed)]]
+    }),
+  )
+}
+
 function createScopedAttention(
   attention: TuiPluginApi["attention"],
   scope: PluginScope,
@@ -172,9 +190,7 @@ function createScopedAttention(
         return scope.track(
           attention.soundboard.registerPack({
             ...pack,
-            sounds: Object.fromEntries(
-              Object.entries(pack.sounds).map(([name, file]) => [name, resolvePluginFile(root, file)]),
-            ),
+            sounds: resolvePluginSoundPackSounds(root, pack.sounds),
           }),
         )
       },

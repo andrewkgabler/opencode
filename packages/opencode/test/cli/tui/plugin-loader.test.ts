@@ -867,7 +867,13 @@ test("auto-disposes plugin attention sound packs and resolves relative paths", a
   tui: async (api) => {
     api.attention.soundboard.registerPack({
       id: "demo.pack",
-      sounds: { question: "sounds/question.mp3" },
+      sounds: {
+        question: "sounds/question.mp3",
+        done: "  sounds/done.mp3  ",
+        nope: "sounds/nope.mp3",
+        error: undefined,
+        permission: "",
+      },
     })
   },
 }
@@ -911,7 +917,10 @@ test("auto-disposes plugin attention sound packs and resolves relative paths", a
     expect(packs).toEqual([
       {
         id: "demo.pack",
-        sounds: { question: path.join(tmp.path, "sounds", "question.mp3") },
+        sounds: {
+          question: path.join(tmp.path, "sounds", "question.mp3"),
+          done: path.join(tmp.path, "sounds", "done.mp3"),
+        },
       },
     ])
     expect(dropped).toBe(0)
