@@ -27,10 +27,13 @@ export function loadSoundFile(file: string) {
   if (!current) return Promise.resolve(null)
   const cached = sounds.get(file)
   if (cached) return cached
-  const task = current.loadSoundFile(file).catch((error) => {
-    log.debug("failed to load tui sound", { file, error })
-    return null
-  })
+  const task = Bun.file(file)
+    .bytes()
+    .then((bytes) => current.loadSound(bytes))
+    .catch((error) => {
+      log.debug("failed to load tui sound", { file, error })
+      return null
+    })
   sounds.set(file, task)
   return task
 }
