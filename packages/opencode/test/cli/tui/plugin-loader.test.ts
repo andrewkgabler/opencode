@@ -3,6 +3,7 @@ import fs from "fs/promises"
 import path from "path"
 import { pathToFileURL } from "url"
 import { createTestKeymap } from "@opentui/keymap/testing"
+import type { TuiAttentionSoundPack } from "@opencode-ai/plugin/tui"
 import { tmpdir } from "../../fixture/fixture"
 import { createTuiPluginApi } from "../../fixture/tui-plugin"
 import { createTuiResolvedConfig, mockTuiRuntime } from "../../fixture/tui-runtime"
@@ -887,24 +888,18 @@ test("auto-disposes plugin attention sound packs and resolves sound paths", asyn
     },
   })
 
-  const packs: Array<{ id: string; sounds: Record<string, string> }> = []
+  const packs: TuiAttentionSoundPack[] = []
   let dropped = 0
   const attention = {
-    async notify() {
-      return { ok: false, notification: false, sound: false }
-    },
     soundboard: {
-      registerPack(pack: { id: string; sounds: Record<string, string> }) {
+      registerPack(pack: TuiAttentionSoundPack) {
         packs.push(pack)
         return () => {
           dropped += 1
         }
       },
-      activate: () => false,
-      current: () => "opencode.default",
-      list: () => [],
     },
-  } as NonNullable<Parameters<typeof createTuiPluginApi>[0]>["attention"]
+  }
   const wait = spyOn(TuiConfig, "waitForDependencies").mockResolvedValue()
   const cwd = spyOn(process, "cwd").mockImplementation(() => tmp.path)
 
